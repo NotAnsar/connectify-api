@@ -19,13 +19,50 @@ exports.getProfile = (req, res) => {
 			WHERE u.id=?;
 		`;
 
-			console.log(req.user);
 			db.query(q, [userid, userid, req.user.id, userid], async (err, data) => {
 				if (err) throw new AppError();
 				data[0].password = undefined;
 				return res.status(200).json({
 					status: 'success',
 					message: 'Here is your profile data',
+					user: data[0],
+				});
+			});
+		} catch (error) {
+			return res
+				.status(error.status)
+				.json({ status: 'error', message: error.message });
+		}
+	});
+};
+
+exports.updateUser = (req, res) => {
+	const updates = req.body;
+
+	if (
+		Object.keys(updates).length === 0 ||
+		'password' in updates ||
+		'release_dt' in updates
+	) {
+		return res
+			.status(400)
+			.json({ status: 'error', message: 'No updates provided' });
+	}
+
+	const q = 'UPDATE user SET ? WHERE id = ?';
+
+	db.query(q, [updates, req.user.id], async (err, data) => {
+		try {
+			if (err) throw new AppError();
+
+			const q1 = 'SELECT * FROM user  WHERE id = ?';
+			db.query(q1, [req.user.id], async (err, data) => {
+				if (err) throw new AppError();
+
+				data[0].password = undefined;
+				return res.status(200).json({
+					status: 'success',
+					message: 'User updated successfully',
 					user: data[0],
 				});
 			});
