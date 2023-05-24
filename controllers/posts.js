@@ -1,6 +1,6 @@
-const jwt = require('jsonwebtoken');
 const db = require('../connect');
 const AppError = require('../utils/appError');
+const { getRelease_dt } = require('./auth');
 
 exports.getPosts = (req, res) => {
 	const q = `select p.*,u.nom,u.prenom,u.photo,count(l.user_id) as comments,count(c.id) as likes 
@@ -26,25 +26,17 @@ exports.getPosts = (req, res) => {
 	});
 };
 
-exports.getMyPosts = (req, res) => {
-	const authHeader = req.headers.authorization;
-	const token = authHeader && authHeader.split(' ')[1];
-
-	if (!token)
-		res.status(401).json({ status: 'error', message: 'Unauthorized' });
-
-	jwt.verify(token, 'secretkey', (err, user) => {
+exports.getPostsByUser = (req, res) => {
+	const { user_id } = req.params;
+	const q1 = `select * from user where id=?`;
+	db.query(q1, user_id, async (err, data) => {
 		try {
-			if (err) throw new AppError('Token is not Valid', 401);
+			if (err) throw new AppError();
 
-			const q1 = `select * from user where id=?`;
-			db.query(q1, user.id, async (err, data) => {
-				if (err) throw new AppError();
+			if (data.length === 0)
+				throw new AppError('There is no user with this id.', 404);
 
-				if (data.length === 0)
-					throw new AppError('There is no user with this id.', 404);
-
-				const q = `select p.*,u.nom,u.prenom,u.photo,
+			const q = `select p.*,u.nom,u.prenom,u.photo,
 										COUNT(DISTINCT c.id) AS comments, COUNT(DISTINCT l.user_id) AS likes,
 										CASE WHEN s.user_id IS NOT NULL THEN 1 ELSE 0 END AS is_saved, 
 										CASE WHEN le.user_id IS NOT NULL THEN 1 ELSE 0 END AS is_liked 
@@ -52,19 +44,18 @@ exports.getMyPosts = (req, res) => {
 										JOIN user u ON u.id=p.user_id 
 										LEFT JOIN likes l ON l.post_id=p.id 
 										LEFT JOIN comments c ON c.post_id=p.id 
-										LEFT JOIN likes le ON le.post_id = p.id 
+										LEFT JOIN likes le ON le.post_id = p.id and le.user_id = ?
 										LEFT JOIN saved s ON s.post_id = p.id 
 										where u.id=?
 										GROUP by p.id
 										ORDER BY p.release_dt DESC`;
 
-				db.query(q, [user.id], async (err, data) => {
-					if (err) throw new AppError();
+			db.query(q, [req.user.id, user_id], async (err, data) => {
+				if (err) throw new AppError();
 
-					return res
-						.status(200)
-						.json({ status: 'success', message: '', posts: data });
-				});
+				return res
+					.status(200)
+					.json({ status: 'success', message: '', posts: data });
 			});
 		} catch (error) {
 			return res
@@ -75,16 +66,7 @@ exports.getMyPosts = (req, res) => {
 };
 
 exports.getFeedPost = (req, res) => {
-	const authHeader = req.headers.authorization;
-	const token = authHeader && authHeader.split(' ')[1];
-
-	if (!token)
-		res.status(401).json({ status: 'error', message: 'Unauthorized' });
-
-	jwt.verify(token, 'secretkey', (err, user) => {
-		try {
-			if (err) throw new AppError('Token is not Valid', 401);
-			const q = `SELECT p.*, u.nom, u.prenom, u.photo, 
+	const q = `SELECT p.*, u.nom, u.prenom, u.photo, 
 			COUNT(DISTINCT c.id) AS comments, COUNT(DISTINCT l.user_id) AS likes, 
 			CASE WHEN s.user_id IS NOT NULL THEN 1 ELSE 0 END AS is_saved, 
 			CASE WHEN le.user_id IS NOT NULL THEN 1 ELSE 0 END AS is_liked ,
@@ -101,38 +83,28 @@ exports.getFeedPost = (req, res) => {
 			GROUP BY p.id 
 			ORDER BY p.release_dt DESC;`;
 
-			db.query(
-				q,
-				[user.id, user.id, user.id, user.id, user.id],
-				async (err, data) => {
-					if (err) throw new AppError();
+	console.log(req.user.id);
+	db.query(
+		q,
+		[req.user.id, req.user.id, req.user.id, req.user.id, req.user.id],
+		async (err, data) => {
+			try {
+				if (err) throw new AppError();
 
-					return res
-						.status(200)
-						.json({ status: 'success', message: '', posts: data });
-				}
-			);
-		} catch (error) {
-			return res
-				.status(error.status)
-				.json({ status: 'error', message: error.message });
+				return res
+					.status(200)
+					.json({ status: 'success', message: '', posts: data });
+			} catch (error) {
+				return res
+					.status(error.status)
+					.json({ status: 'error', message: error.message });
+			}
 		}
-	});
+	);
 };
 
 exports.getSavedPost = (req, res) => {
-	const authHeader = req.headers.authorization;
-	const token = authHeader && authHeader.split(' ')[1];
-
-	if (!token)
-		res.status(401).json({ status: 'error', message: 'Unauthorized' });
-
-	jwt.verify(token, 'secretkey', (err, user) => {
-		try {
-			console.log(user);
-			if (err) throw new AppError('Token is not Valid', 401);
-
-			const q = `SELECT p.*,u2.nom, u2.prenom, u2.photo, 
+	const q = `SELECT p.*,u2.nom, u2.prenom, u2.photo, 
 			COUNT(DISTINCT c.id) AS comments, COUNT(DISTINCT l.user_id) AS likes, 
 			CASE WHEN s2.user_id IS NOT NULL THEN 1 ELSE 0 END AS is_saved, 
 			CASE WHEN le.user_id IS NOT NULL THEN 1 ELSE 0 END AS is_liked,
@@ -148,13 +120,74 @@ exports.getSavedPost = (req, res) => {
 			LEFT JOIN follow ff ON ff.followed_id = p.user_id and ff.follower_id = ?
 			WHERE s.user_id=? GROUP BY p.id ORDER BY p.release_dt DESC;`;
 
-			db.query(q, [user.id, user.id, user.id, user.id], async (err, data) => {
+	db.query(
+		q,
+		[req.user.id, req.user.id, req.user.id, req.user.id],
+		async (err, data) => {
+			try {
 				if (err) throw new AppError();
 
 				return res
 					.status(200)
 					.json({ status: 'success', message: '', posts: data });
-			});
+			} catch (error) {
+				return res
+					.status(error.status)
+					.json({ status: 'error', message: error.message });
+			}
+		}
+	);
+};
+
+exports.addPost = (req, res) => {
+	const { description, img } = req.body;
+	console.log(description, img);
+
+	if (!(description || img)) {
+		return res
+			.status(401)
+			.json({ status: 'error', message: 'Please provide required inputs' });
+	}
+
+	const q =
+		'INSERT INTO `posts` (`user_id`, `description`, `img`, `release_dt`) VALUES (?);';
+
+	const newPost = {
+		user_id: req.user.id,
+		description: description === undefined ? null : description,
+		img: img === undefined ? null : img,
+		release_dt: getRelease_dt(),
+	};
+
+	db.query(q, [Object.values(newPost)], async (err, data) => {
+		try {
+			if (err) throw new AppError();
+
+			newPost.id = data.insertId;
+			console.log(newPost);
+			return res
+				.status(200)
+				.json({ status: 'success', message: '', post: newPost });
+		} catch (error) {
+			return res
+				.status(error.status)
+				.json({ status: 'error', message: error.message });
+		}
+	});
+};
+
+exports.deletePost = (req, res) => {
+	const { id } = req.params;
+
+	const q = 'DELETE FROM `posts` WHERE id=?';
+
+	db.query(q, [id], async (err, data) => {
+		try {
+			if (err) throw new AppError();
+
+			return res
+				.status(204)
+				.json({ status: 'success', message: 'Post Deleted' });
 		} catch (error) {
 			return res
 				.status(error.status)

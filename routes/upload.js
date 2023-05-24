@@ -1,9 +1,9 @@
 const express = require('express');
-const { getProfile } = require('../controllers/users');
 const { verify } = require('../utils/verify');
+const { uploadFile, upload } = require('../controllers/upload');
 
 const router = express.Router();
 
-router.get('/profile/:userid', verify, getProfile);
+router.post('/', verify, upload.single('file'), uploadFile);
 
 module.exports = router;

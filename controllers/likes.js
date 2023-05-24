@@ -1,10 +1,7 @@
-const jwt = require('jsonwebtoken');
 const db = require('../connect');
 const AppError = require('../utils/appError');
 
 exports.likePost = (req, res) => {
-	const authHeader = req.headers.authorization;
-	const token = authHeader && authHeader.split(' ')[1];
 	const { post_id } = req.body;
 
 	if (!post_id) {
@@ -13,24 +10,17 @@ exports.likePost = (req, res) => {
 			.json({ status: 'error', message: 'Please provide required inputs' });
 	}
 
-	if (!token)
-		res.status(401).json({ status: 'error', message: 'Unauthorized' });
+	const q = 'INSERT INTO `likes` (`user_id`, `post_id`) VALUES(?)';
+	const likedPost = { user_id: req.user.id, post_id };
 
-	jwt.verify(token, 'secretkey', (err, user) => {
+	db.query(q, [Object.values(likedPost)], async (err, data) => {
 		try {
-			if (err) throw new AppError('Token is not Valid', 401);
+			if (err) throw new AppError();
 
-			const q = 'INSERT INTO `likes` (`user_id`, `post_id`) VALUES(?)';
-			const likedPost = { user_id: user.id, post_id };
-
-			db.query(q, [Object.values(likedPost)], async (err, data) => {
-				if (err) throw new AppError();
-
-				return res.status(200).json({
-					status: 'success',
-					message: `the Post ${likedPost.post_id} was like by ${likedPost.user_id}`,
-					likedPost,
-				});
+			return res.status(200).json({
+				status: 'success',
+				message: `the Post ${likedPost.post_id} was like by ${likedPost.user_id}`,
+				likedPost,
 			});
 		} catch (error) {
 			return res
@@ -41,8 +31,6 @@ exports.likePost = (req, res) => {
 };
 
 exports.dislikePost = (req, res) => {
-	const authHeader = req.headers.authorization;
-	const token = authHeader && authHeader.split(' ')[1];
 	const { post_id } = req.body;
 
 	if (!post_id) {
@@ -51,23 +39,16 @@ exports.dislikePost = (req, res) => {
 			.json({ status: 'error', message: 'Please provide required inputs' });
 	}
 
-	if (!token)
-		res.status(401).json({ status: 'error', message: 'Unauthorized' });
+	const q = 'DELETE FROM likes WHERE user_id=? and post_id=?';
+	const likedPost = { user_id: req.user.id, post_id };
 
-	jwt.verify(token, 'secretkey', (err, user) => {
+	db.query(q, [likedPost.user_id, likedPost.post_id], async (err, data) => {
 		try {
-			if (err) throw new AppError('Token is not Valid', 401);
+			if (err) throw new AppError();
 
-			const q = 'DELETE FROM likes WHERE user_id=? and post_id=?';
-			const likedPost = { user_id: user.id, post_id };
-
-			db.query(q, [likedPost.user_id, likedPost.post_id], async (err, data) => {
-				if (err) throw new AppError();
-
-				return res.status(200).json({
-					status: 'success',
-					message: `the Post ${likedPost.post_id} was disliked by ${likedPost.user_id}`,
-				});
+			return res.status(200).json({
+				status: 'success',
+				message: `the Post ${likedPost.post_id} was disliked by ${likedPost.user_id}`,
 			});
 		} catch (error) {
 			return res
@@ -75,4 +56,45 @@ exports.dislikePost = (req, res) => {
 				.json({ status: 'error', message: error.message });
 		}
 	});
+};
+
+exports.getLikesByPost = (req, res) => {
+	console.log('hi');
+	const { post_id } = req.params;
+
+	if (!post_id) {
+		return res
+			.status(401)
+			.json({ status: 'error', message: 'Please provide required inputs' });
+	}
+
+	const q = `SELECT u.id,u.prenom,u.nom,u.username,u.photo ,l.post_id,? me, p.user_id postuser_id,
+	CASE WHEN f.follower_id IS NOT NULL THEN 1 ELSE 0 END AS is_followed
+	FROM likes l
+	JOIN user u on u.id=l.user_id
+	JOIN posts p on p.id=l.post_id
+	LEFT JOIN follow f ON f.followed_id = l.user_id and f.follower_id = ?
+	WHERE l.post_id=?`;
+
+	const likedPost = { user_id: req.user.id, post_id };
+
+	db.query(
+		q,
+		[likedPost.user_id, likedPost.user_id, likedPost.post_id],
+		async (err, data) => {
+			try {
+				if (err) throw new AppError();
+
+				return res.status(200).json({
+					status: 'success',
+					message: ``,
+					likes: data,
+				});
+			} catch (error) {
+				return res
+					.status(error.status)
+					.json({ status: 'error', message: error.message });
+			}
+		}
+	);
 };

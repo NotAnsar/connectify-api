@@ -3,8 +3,11 @@ const bcrypt = require('bcryptjs');
 const AppError = require('../utils/appError');
 const jwt = require('jsonwebtoken');
 
-exports.getRelease_dt = () =>
-	new Date().toISOString().slice(0, 19).replace('T', ' ');
+exports.getRelease_dt = () => {
+	const now = new Date();
+	now.setUTCHours(now.getUTCHours() + 1);
+	return now.toISOString().slice(0, 19).replace('T', ' ');
+};
 
 exports.register = (req, res) => {
 	//check required input exist

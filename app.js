@@ -6,10 +6,14 @@ const authRouter = require('./routes/auth.js');
 const likesRouter = require('./routes/likes.js');
 const savedRouter = require('./routes/postSaved.js');
 const postsRouter = require('./routes/posts.js');
+const followRouter = require('./routes/follow.js');
+const uploadRouter = require('./routes/upload.js');
+
 const cookieParser = require('cookie-parser');
 
 const http = require('http');
 const socketIO = require('socket.io');
+const multer = require('multer');
 
 const app = express();
 
@@ -41,12 +45,15 @@ app.use((err, req, res, next) => {
 });
 
 // routers
-app.use('/api/v1/users', userRouter);
-app.use('/api/v1/comments', commentsRouter);
 app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/likedPosts', likesRouter);
-app.use('/api/v1/savedPosts', savedRouter);
+app.use('/api/v1/upload', uploadRouter);
+app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/users', userRouter);
 app.use('/api/v1/posts', postsRouter);
+app.use('/api/v1/comments', commentsRouter);
+app.use('/api/v1/likes', likesRouter);
+app.use('/api/v1/saves', savedRouter);
+app.use('/api/v1/follow', followRouter);
 
 const port = '3000';
 
