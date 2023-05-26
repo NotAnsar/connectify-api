@@ -1,4 +1,5 @@
 const db = require('../connect');
+const bcrypt = require('bcryptjs');
 const AppError = require('../utils/appError');
 
 exports.getProfile = (req, res) => {
@@ -64,6 +65,43 @@ exports.updateUser = (req, res) => {
 					status: 'success',
 					message: 'User updated successfully',
 					user: data[0],
+				});
+			});
+		} catch (error) {
+			return res
+				.status(error.status)
+				.json({ status: 'error', message: error.message });
+		}
+	});
+};
+
+exports.deleteMe = (req, res) => {
+	const { password } = req.body;
+
+	if (!password) {
+		return res
+			.status(400)
+			.json({ status: 'error', message: 'provide password' });
+	}
+
+	const q = `select * from user where id=?`;
+	db.query(q, [req.user.id], async (err, data) => {
+		try {
+			if (err) throw new AppError();
+
+			if (data.length === 0)
+				throw new AppError('There is no user with this Id.', 404);
+
+			const checkPassword = await bcrypt.compare(password, data[0].password);
+			if (!checkPassword) throw new AppError('Wrong Password', 401);
+
+			const q1 = 'DELETE FROM user WHERE `user`.`id` = ?';
+			db.query(q1, [req.user.id], async (err, data) => {
+				if (err) throw new AppError();
+
+				return res.status(200).json({
+					status: 'success',
+					message: 'User Deleted successfully',
 				});
 			});
 		} catch (error) {

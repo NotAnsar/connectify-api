@@ -1,6 +1,6 @@
 const db = require('../connect');
 const AppError = require('../utils/appError');
-const { getRelease_dt } = require('./auth');
+const { getRelease_dt } = require('../utils/getRelease_dt');
 
 exports.getPosts = (req, res) => {
 	const q = `select p.*,u.nom,u.prenom,u.photo,count(l.user_id) as comments,count(c.id) as likes 

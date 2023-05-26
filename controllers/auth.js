@@ -2,12 +2,7 @@ const db = require('../connect');
 const bcrypt = require('bcryptjs');
 const AppError = require('../utils/appError');
 const jwt = require('jsonwebtoken');
-
-exports.getRelease_dt = () => {
-	const now = new Date();
-	now.setUTCHours(now.getUTCHours() + 1);
-	return now.toISOString().slice(0, 19).replace('T', ' ');
-};
+const { getRelease_dt } = require('../utils/getRelease_dt');
 
 exports.register = (req, res) => {
 	//check required input exist
@@ -22,7 +17,6 @@ exports.register = (req, res) => {
 		relationship,
 	} = req.body;
 
-	console.log(req.body);
 	if (
 		!(
 			email &&
@@ -42,6 +36,7 @@ exports.register = (req, res) => {
 
 	// check user exists
 	const q = `select * from user where email=? or username=?`;
+
 	db.query(q, [email, username], async (err, data) => {
 		try {
 			if (err) throw new AppError();
@@ -70,9 +65,10 @@ exports.register = (req, res) => {
 
 			// Object.values(newUser) convert new user object to array
 			db.query(insertQuery, [Object.values(newUser)], (err, data) => {
+				console.log('c');
 				if (err) throw new AppError();
 				newUser.id = data.insertId;
-				console.log(newUser);
+
 				createToken(newUser, res, 201, 'User has been Created', req);
 			});
 		} catch (error) {
@@ -121,6 +117,47 @@ exports.logout = (req, res) => {
 	res
 		.status(200)
 		.json({ status: 'success', message: 'User has been Logged Out' });
+};
+
+exports.changePassword = (req, res) => {
+	const { oldPassword, newPassword } = req.body;
+
+	if (!(oldPassword && newPassword))
+		return res.status(401).json({
+			status: 'error',
+			message: 'Please provide your old Password and yout new Password',
+		});
+
+	const q = `select * from user where id=?`;
+	db.query(q, [req.user.id], async (err, data) => {
+		try {
+			if (err) throw new AppError();
+
+			if (data.length === 0)
+				throw new AppError('There is no user with id.', 404);
+
+			const checkPassword = await bcrypt.compare(oldPassword, data[0].password);
+
+			if (!checkPassword) throw new AppError('Wrong Password', 401);
+
+			const hashedPass = await bcrypt.hash(newPassword, 10);
+
+			const q = 'UPDATE user SET password=? WHERE id = ?';
+
+			db.query(q, [hashedPass, req.user.id], (err, data) => {
+				if (err) throw new AppError();
+
+				return res.status(200).json({
+					status: 'success',
+					message: 'User Password Changed successfully',
+				});
+			});
+		} catch (error) {
+			return res
+				.status(error.status)
+				.json({ status: 'error', message: error.message });
+		}
+	});
 };
 
 function createToken(user, res, statusCode, message, req) {

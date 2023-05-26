@@ -1,6 +1,7 @@
 const db = require('../connect');
-const { getRelease_dt } = require('./auth');
+
 const AppError = require('../utils/appError');
+const { getRelease_dt } = require('../utils/getRelease_dt');
 
 exports.getComments = (req, res) => {
 	const { postId } = req.params;
@@ -55,6 +56,33 @@ exports.addComments = (req, res) => {
 				status: 'success',
 				message: 'comment added succesfully',
 				comment: newComment,
+			});
+		} catch (error) {
+			return res
+				.status(error.status)
+				.json({ status: 'error', message: error.message });
+		}
+	});
+};
+
+exports.deleteComments = (req, res) => {
+	const { id } = req.params;
+
+	if (!id) {
+		return res
+			.status(401)
+			.json({ status: 'error', message: 'Please provide required inputs' });
+	}
+
+	const insertQuery = 'DELETE FROM `comments` WHERE `comments`.`id` = ?';
+
+	db.query(insertQuery, id, (err, _) => {
+		try {
+			if (err) throw new AppError();
+
+			res.status(200).json({
+				status: 'success',
+				message: 'comment deleted succesfully',
 			});
 		} catch (error) {
 			return res
