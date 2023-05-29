@@ -2,6 +2,36 @@ const db = require('../connect');
 const bcrypt = require('bcryptjs');
 const AppError = require('../utils/appError');
 
+exports.getMe = (req, res) => {
+	const q1 = `select * from user where id=?`;
+	db.query(q1, req.user.id, async (err, data) => {
+		try {
+			if (err) throw new AppError();
+
+			if (data.length === 0) throw new AppError('User does not exist.', 404);
+			const q = `SELECT * FROM user WHERE id=?;`;
+
+			db.query(q, [req.user.id], async (err, data) => {
+				if (err) throw new AppError();
+				data[0].password = undefined;
+				// data[0].coverPhoto = undefined;
+				// data[0].photo = undefined;
+				// data[0].id = undefined;
+				// data[0].release_dt = undefined;
+
+				return res.status(200).json({
+					status: 'success',
+					message: 'Here is your data',
+					user: data[0],
+				});
+			});
+		} catch (error) {
+			return res
+				.status(error.status)
+				.json({ status: 'error', message: error.message });
+		}
+	});
+};
 exports.getProfile = (req, res) => {
 	const { userid } = req.params;
 
@@ -39,6 +69,7 @@ exports.getProfile = (req, res) => {
 
 exports.updateUser = (req, res) => {
 	const updates = req.body;
+	console.log(updates);
 
 	if (
 		Object.keys(updates).length === 0 ||
@@ -103,6 +134,54 @@ exports.deleteMe = (req, res) => {
 					status: 'success',
 					message: 'User Deleted successfully',
 				});
+			});
+		} catch (error) {
+			return res
+				.status(error.status)
+				.json({ status: 'error', message: error.message });
+		}
+	});
+};
+
+exports.getSuggestedUsers = (req, res) => {
+	const q1 = `SELECT u.id ,u.prenom,u.nom ,u.username ,u.photo ,
+							IF(ff.follower_id IS NOT NULL, 1, 0) AS is_followed 
+							FROM user u
+							LEFT JOIN follow ff ON ff.followed_id = u.id AND ff.follower_id = ?
+							WHERE IF(ff.follower_id IS NOT NULL, 1, 0) = 0 AND u.id <> ?;`;
+
+	db.query(q1, [req.user.id, req.user.id], async (err, data) => {
+		try {
+			if (err) throw new AppError();
+
+			return res.status(200).json({
+				status: 'success',
+				message: 'Here is your suggested users',
+				users: data,
+			});
+		} catch (error) {
+			return res
+				.status(error.status)
+				.json({ status: 'error', message: error.message });
+		}
+	});
+};
+
+exports.getFriends = (req, res) => {
+	const q1 = `SELECT u.id ,u.prenom,u.nom ,u.username ,u.photo ,
+							IF(ff.follower_id IS NOT NULL, 1, 0) AS is_followed 
+							FROM user u
+							LEFT JOIN follow ff ON ff.followed_id = u.id AND ff.follower_id = ?
+							WHERE IF(ff.follower_id IS NOT NULL, 1, 0) = 1`;
+
+	db.query(q1, [req.user.id], async (err, data) => {
+		try {
+			if (err) throw new AppError();
+
+			return res.status(200).json({
+				status: 'success',
+				message: 'Here is your Friend list',
+				users: data,
 			});
 		} catch (error) {
 			return res

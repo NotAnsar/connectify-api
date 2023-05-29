@@ -13,7 +13,6 @@ const cookieParser = require('cookie-parser');
 
 const http = require('http');
 const socketIO = require('socket.io');
-const multer = require('multer');
 
 const app = express();
 
@@ -62,18 +61,29 @@ server.listen(port, () => {
 	console.log(`app running on port http://127.0.0.1:${port}...`);
 });
 
+let onlineUsers = [];
+
 // Socket.IO server setup
 io.on('connection', (socket) => {
-	console.log('someone has connected');
-	io.emit('firstEVENT', 'Hello from server!');
+	console.log('new User connected ', onlineUsers);
 
-	socket.on('firstEVENT', (s) => {
-		console.log(s);
+	socket.on('new-user-add', (newUserId) => {
+		if (!onlineUsers.some((user) => user.userId === newUserId)) {
+			// if user is not added before
+			onlineUsers.push({ userId: newUserId, socketId: socket.id });
+			console.log('new user is here!', onlineUsers);
+		}
+		// send all active users to new user
+		io.emit('get-users', onlineUsers);
 	});
+
 	socket.on('disconnect', () => {
 		console.log('A user disconnected');
+
+		onlineUsers = onlineUsers.filter((user) => user.socketId !== socket.id);
+		console.log('user disconnected', onlineUsers);
+		// send all online users to all users
+		io.emit('get-users', onlineUsers);
 	});
 	socketInstance = io;
 });
-
-// module.exports = socketInstance;

@@ -7,6 +7,7 @@ const {
 	getPostsByUser,
 	addPost,
 	deletePost,
+	updatePost,
 } = require('../controllers/posts');
 
 const router = express.Router();
@@ -14,6 +15,7 @@ const router = express.Router();
 router.get('/', verify, getPosts);
 router.post('/', verify, addPost);
 router.delete('/:id', verify, deletePost);
+router.patch('/:id', verify, updatePost);
 
 router.get('/feed', verify, getFeedPost);
 router.get('/saved', verify, getSavedPost);
