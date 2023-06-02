@@ -8,6 +8,8 @@ const savedRouter = require('./routes/postSaved.js');
 const postsRouter = require('./routes/posts.js');
 const followRouter = require('./routes/follow.js');
 const uploadRouter = require('./routes/upload.js');
+const conversationsRouter = require('./routes/conversations.js');
+const messagesRouter = require('./routes/messages.js');
 
 const cookieParser = require('cookie-parser');
 
@@ -32,6 +34,7 @@ const io = socketIO(server, {
 });
 
 global.ioInstance = io;
+global.onlineUsers = [];
 
 // if req.body not json throw errow
 
@@ -53,6 +56,8 @@ app.use('/api/v1/comments', commentsRouter);
 app.use('/api/v1/likes', likesRouter);
 app.use('/api/v1/saves', savedRouter);
 app.use('/api/v1/follow', followRouter);
+app.use('/api/v1/conversations', conversationsRouter);
+app.use('/api/v1/messages', messagesRouter);
 
 const port = '3000';
 
@@ -61,7 +66,7 @@ server.listen(port, () => {
 	console.log(`app running on port http://127.0.0.1:${port}...`);
 });
 
-let onlineUsers = [];
+// const onlineUsers = [];
 
 // Socket.IO server setup
 io.on('connection', (socket) => {
@@ -71,10 +76,15 @@ io.on('connection', (socket) => {
 		if (!onlineUsers.some((user) => user.userId === newUserId)) {
 			// if user is not added before
 			onlineUsers.push({ userId: newUserId, socketId: socket.id });
+
 			console.log('new user is here!', onlineUsers);
 		}
 		// send all active users to new user
 		io.emit('get-users', onlineUsers);
+	});
+
+	socket.on('send-message', (message) => {
+		io.emit('receive-message', message);
 	});
 
 	socket.on('disconnect', () => {
@@ -85,5 +95,4 @@ io.on('connection', (socket) => {
 		// send all online users to all users
 		io.emit('get-users', onlineUsers);
 	});
-	socketInstance = io;
 });

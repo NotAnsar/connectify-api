@@ -14,10 +14,6 @@ exports.getMe = (req, res) => {
 			db.query(q, [req.user.id], async (err, data) => {
 				if (err) throw new AppError();
 				data[0].password = undefined;
-				// data[0].coverPhoto = undefined;
-				// data[0].photo = undefined;
-				// data[0].id = undefined;
-				// data[0].release_dt = undefined;
 
 				return res.status(200).json({
 					status: 'success',
@@ -32,6 +28,7 @@ exports.getMe = (req, res) => {
 		}
 	});
 };
+
 exports.getProfile = (req, res) => {
 	const { userid } = req.params;
 
@@ -69,7 +66,6 @@ exports.getProfile = (req, res) => {
 
 exports.updateUser = (req, res) => {
 	const updates = req.body;
-	console.log(updates);
 
 	if (
 		Object.keys(updates).length === 0 ||

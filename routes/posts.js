@@ -1,18 +1,18 @@
 const express = require('express');
 const { verify } = require('../utils/verify');
 const {
-	getPosts,
 	getFeedPost,
 	getSavedPost,
 	getPostsByUser,
 	addPost,
 	deletePost,
 	updatePost,
+	getAllPosts,
 } = require('../controllers/posts');
 
 const router = express.Router();
 
-router.get('/', verify, getPosts);
+router.get('/', verify, getAllPosts);
 router.post('/', verify, addPost);
 router.delete('/:id', verify, deletePost);
 router.patch('/:id', verify, updatePost);

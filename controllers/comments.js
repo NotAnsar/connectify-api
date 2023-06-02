@@ -50,7 +50,7 @@ exports.addComments = (req, res) => {
 
 			newComment.id = data.insertId;
 
-			ioInstance.emit('commentAdded', post_id);
+			// ioInstance.emit('commentAdded', post_id);
 
 			res.status(200).json({
 				status: 'success',
