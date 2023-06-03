@@ -35,9 +35,48 @@ exports.follow = (req, res) => {
 			db.query(q, values, async (err, _) => {
 				if (err) throw new AppError();
 
-				// ioInstance.emit('userFollowed', post_id);
+				const recipientSocket = onlineUsers.find(
+					(user) => user.userId == req.user.id
+				)?.socketId;
+
+				if (recipientSocket)
+					ioInstance
+						.to(recipientSocket)
+						.emit(
+							'user-follow',
+							data.length === 0 ? [followed_id, 1] : [followed_id, 0]
+						);
 
 				return res.status(200).json(resObject);
+			});
+		} catch (error) {
+			return res
+				.status(error.status)
+				.json({ status: 'error', message: error.message });
+		}
+	});
+};
+exports.searchFriend = (req, res) => {
+	const { searchData } = req.body;
+
+	if (!searchData) {
+		return res
+			.status(401)
+			.json({ status: 'error', message: 'Please provide required inputs' });
+	}
+
+	const q1 = ` SELECT u.id, u.prenom, u.username ,u.nom, u.photo FROM user u
+	JOIN follow f ON f.followed_id = u.id
+	WHERE (username LIKE '%${searchData}%' OR prenom LIKE '%${searchData}%' OR nom LIKE '%${searchData}%') AND f.follower_id = ?;`;
+
+	db.query(q1, req.user.id, async (err, data) => {
+		try {
+			if (err) throw new AppError();
+
+			return res.status(200).json({
+				status: 'success',
+				message: 'Here is your data',
+				friends: data,
 			});
 		} catch (error) {
 			return res

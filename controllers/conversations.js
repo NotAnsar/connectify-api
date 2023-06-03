@@ -2,12 +2,8 @@ const db = require('../connect');
 const AppError = require('../utils/appError');
 
 exports.getMyConversations = (req, res) => {
-	const q = `SELECT u.nom, u.prenom, u.photo, u.id, c.id AS conversation_id, 
-	COALESCE(m.content, NULL) AS last_message, COALESCE(m.release_dt, NULL) 
+	const q = `SELECT u.nom, u.prenom, u.photo, u.username ,u.id, c.id AS conversation_id
 	FROM user u JOIN conversation c ON (c.participant1_id = u.id OR c.participant2_id = u.id) 
-	LEFT JOIN ( SELECT conversation_id, MAX(id) AS last_message_id FROM messages GROUP BY conversation_id ) 
-	AS subquery ON c.id = subquery.conversation_id 
-	LEFT JOIN messages m ON subquery.last_message_id = m.id 
 	WHERE (c.participant1_id = ? OR c.participant2_id = ?) AND (c.participant1_id <> ? OR c.participant2_id <> ?) AND u.id <> ?;
 	`;
 
@@ -23,6 +19,58 @@ exports.getMyConversations = (req, res) => {
 					message: `here's your conversations`,
 					conversations: data,
 				});
+			} catch (error) {
+				return res
+					.status(error.status)
+					.json({ status: 'error', message: error.message });
+			}
+		}
+	);
+};
+
+exports.newConversations = (req, res) => {
+	const { participant_id } = req.body;
+
+	if (!participant_id) {
+		return res
+			.status(401)
+			.json({ status: 'error', message: 'Please provide required inputs' });
+	}
+
+	const q = `SELECT * FROM conversation WHERE (participant1_id=? AND participant2_id =?) or (participant1_id=? AND participant2_id =?)`;
+
+	db.query(
+		q,
+		[req.user.id, participant_id, participant_id, req.user.id],
+		async (err, data) => {
+			try {
+				if (err) throw new AppError();
+
+				if (data.length === 0) {
+					const conversation = {
+						participant1_id: participant_id,
+						participant2_id: req.user.id,
+					};
+
+					const q1 = `INSERT INTO conversation (participant1_id, participant2_id) VALUES (?);`;
+					db.query(q1, [Object.values(conversation)], async (err, data) => {
+						if (err) throw new AppError();
+
+						conversation.id = data.insertId;
+
+						return res.status(201).json({
+							status: 'success',
+							message: `conversations created`,
+							conversation,
+						});
+					});
+				} else {
+					return res.status(201).json({
+						status: 'success',
+						message: `conversations created`,
+						conversation: data[0],
+					});
+				}
 			} catch (error) {
 				return res
 					.status(error.status)
