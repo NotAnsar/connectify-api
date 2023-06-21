@@ -36,8 +36,6 @@ const io = socketIO(server, {
 global.ioInstance = io;
 global.onlineUsers = [];
 
-// if req.body not json throw errow
-
 app.use((err, req, res, next) => {
 	if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
 		console.error(err);

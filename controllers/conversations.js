@@ -79,3 +79,30 @@ exports.newConversations = (req, res) => {
 		}
 	);
 };
+
+exports.deleteConversation = (req, res) => {
+	const { id } = req.params;
+
+	if (!id) {
+		return res
+			.status(401)
+			.json({ status: 'error', message: 'Please provide required inputs' });
+	}
+
+	const insertQuery = 'DELETE FROM conversation WHERE `conversation`.`id` = ?';
+
+	db.query(insertQuery, id, (err, _) => {
+		try {
+			if (err) throw new AppError();
+
+			res.status(200).json({
+				status: 'success',
+				message: 'conversation deleted succesfully',
+			});
+		} catch (error) {
+			return res
+				.status(error.status)
+				.json({ status: 'error', message: error.message });
+		}
+	});
+};

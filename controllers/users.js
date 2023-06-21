@@ -186,3 +186,32 @@ exports.getFriends = (req, res) => {
 		}
 	});
 };
+
+exports.search = (req, res) => {
+	const { searchData } = req.body;
+
+	if (!searchData) {
+		return res
+			.status(401)
+			.json({ status: 'error', message: 'Please provide required inputs' });
+	}
+
+	const q1 = ` SELECT u.id, u.prenom, u.username ,u.nom, u.photo FROM user u
+	WHERE (username LIKE '%${searchData}%' OR prenom LIKE '%${searchData}%' OR nom LIKE '%${searchData}%')`;
+
+	db.query(q1, req.user.id, async (err, data) => {
+		try {
+			if (err) throw new AppError();
+
+			return res.status(200).json({
+				status: 'success',
+				message: 'Here is your data',
+				friends: data,
+			});
+		} catch (error) {
+			return res
+				.status(error.status)
+				.json({ status: 'error', message: error.message });
+		}
+	});
+};

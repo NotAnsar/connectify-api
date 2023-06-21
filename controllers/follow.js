@@ -56,6 +56,7 @@ exports.follow = (req, res) => {
 		}
 	});
 };
+
 exports.searchFriend = (req, res) => {
 	const { searchData } = req.body;
 
