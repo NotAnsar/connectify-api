@@ -3,6 +3,15 @@ const bcrypt = require('bcryptjs');
 const AppError = require('../utils/appError');
 const jwt = require('jsonwebtoken');
 const { getRelease_dt } = require('../utils/getRelease_dt');
+const nodemailer = require('nodemailer');
+
+const transporter = nodemailer.createTransport({
+	service: 'gmail',
+	auth: {
+		user: 'karrouach.ansar@gmail.com',
+		pass: 'vikjvjpuxqdkaxfv',
+	},
+});
 
 exports.register = (req, res) => {
 	//check required input exist
@@ -38,10 +47,12 @@ exports.register = (req, res) => {
 	const q = `select * from user where email=? or username=?`;
 
 	db.query(q, [email, username], async (err, data) => {
+		console.log('hi');
 		try {
 			if (err) throw new AppError();
+			console.log(data);
 			// user exists
-			if (data.length)
+			if (data.length === 1)
 				throw new AppError('User Already Exist. Please Login', 409);
 
 			// hash password
@@ -65,7 +76,6 @@ exports.register = (req, res) => {
 
 			// Object.values(newUser) convert new user object to array
 			db.query(insertQuery, [Object.values(newUser)], (err, data) => {
-				console.log('c');
 				if (err) throw new AppError();
 				newUser.id = data.insertId;
 
@@ -80,7 +90,6 @@ exports.register = (req, res) => {
 };
 
 exports.login = (req, res) => {
-	console.log('hi');
 	const { email, password } = req.body;
 
 	if (!(email && password))
@@ -94,7 +103,7 @@ exports.login = (req, res) => {
 			if (err) throw new AppError();
 
 			if (data.length === 0)
-				throw new AppError('There is no user with email address.', 404);
+				throw new AppError('There is no user with this email address.', 404);
 
 			const checkPassword = await bcrypt.compare(password, data[0].password);
 
@@ -161,6 +170,93 @@ exports.changePassword = (req, res) => {
 	});
 };
 
+exports.resetPassword = (req, res) => {
+	const { newPassword, email } = req.body;
+	console.log(req.body);
+	if (!(email && newPassword))
+		return res.status(401).json({
+			status: 'error',
+			message: 'Please provide your new Password',
+		});
+
+	const q = `select * from user where email=?`;
+	db.query(q, [email], async (err, data) => {
+		try {
+			if (err) throw new AppError();
+
+			if (data.length === 0)
+				throw new AppError('There is no user with this email.', 404);
+
+			const hashedPass = await bcrypt.hash(newPassword, 10);
+
+			const q = 'UPDATE user SET password=? WHERE email = ?';
+
+			db.query(q, [hashedPass, email], (err, data) => {
+				if (err) throw new AppError();
+
+				return res.status(200).json({
+					status: 'success',
+					message: 'User Password Changed successfully',
+				});
+			});
+		} catch (error) {
+			return res
+				.status(error.status)
+				.json({ status: 'error', message: error.message });
+		}
+	});
+};
+
+exports.sendOTP = (req, res) => {
+	const { email, register = true } = req.body;
+
+	if (!email)
+		return res
+			.status(401)
+			.json({ status: 'error', message: 'Please provide an email' });
+
+	const q = `select * from user where email=?`;
+	db.query(q, [email], async (err, data) => {
+		try {
+			if (err) throw new AppError();
+
+			if (register) {
+				if (data.length === 1)
+					throw new AppError('User Already Exist. Please Login', 409);
+			} else {
+				console.log(data);
+				if (data.length === 0)
+					throw new AppError('There is no user with this email address.', 404);
+			}
+
+			// try {
+			const OTPCode = generateOTP();
+			const mailOptions = {
+				from: 'karrouach.ansar@gmail.com',
+				to: email,
+				subject: 'OTP for Registration',
+				text: `Your OTP for registration is: ${OTPCode}`,
+			};
+
+			transporter.sendMail(mailOptions, function (error, info) {
+				if (error) {
+					throw new AppError('Error occurred while sending email', 400);
+				} else {
+					return res.status(200).json({
+						status: 'success',
+						message: 'OTP Code sent successfully to your email !',
+						otp: OTPCode,
+					});
+				}
+			});
+		} catch (error) {
+			return res
+				.status(error.status)
+				.json({ status: 'error', message: error.message });
+		}
+	});
+};
+
 function createToken(user, res, statusCode, message, req) {
 	const token = jwt.sign({ id: user.id }, 'secretkey');
 
@@ -183,4 +279,11 @@ function createToken(user, res, statusCode, message, req) {
 	return res
 		.status(statusCode)
 		.json({ status: 'success', message, user, token });
+}
+
+function generateOTP() {
+	var randomNumber = Math.floor(Math.random() * 9999) + 1; // Generate a random number between 1 and 9999
+	var formattedNumber = randomNumber.toString().padStart(4, '0'); // Format the number with leading zeros
+
+	return formattedNumber;
 }
