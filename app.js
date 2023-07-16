@@ -10,6 +10,7 @@ const followRouter = require('./routes/follow.js');
 const uploadRouter = require('./routes/upload.js');
 const conversationsRouter = require('./routes/conversations.js');
 const messagesRouter = require('./routes/messages.js');
+const notificationsRouter = require('./routes/notification.js');
 
 const cookieParser = require('cookie-parser');
 
@@ -56,6 +57,7 @@ app.use('/api/v1/saves', savedRouter);
 app.use('/api/v1/follow', followRouter);
 app.use('/api/v1/conversations', conversationsRouter);
 app.use('/api/v1/messages', messagesRouter);
+app.use('/api/v1/notifications', notificationsRouter);
 
 const port = '3000';
 

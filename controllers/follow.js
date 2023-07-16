@@ -1,5 +1,7 @@
 const db = require('../connect');
 const AppError = require('../utils/appError');
+const { getRelease_dt } = require('../utils/getRelease_dt');
+const { addNotification } = require('./notification');
 
 exports.follow = (req, res) => {
 	const { followed_id } = req.params;
@@ -25,6 +27,13 @@ exports.follow = (req, res) => {
 				q = 'INSERT INTO `follow` (`follower_id`, `followed_id`) VALUES(?)';
 				resObject.message = `the user ${follow.follower_id} followed ${follow.followed_id}`;
 				resObject.follow = follow;
+
+				addNotification(
+					follow.follower_id,
+					follow.followed_id,
+					'follow',
+					getRelease_dt()
+				);
 			} else {
 				console.log('unfollowed');
 				values = Object.values(follow);

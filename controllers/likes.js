@@ -1,5 +1,7 @@
 const db = require('../connect');
 const AppError = require('../utils/appError');
+const { getRelease_dt } = require('../utils/getRelease_dt');
+const { addNotification } = require('./notification');
 
 exports.likePost = (req, res) => {
 	const { post_id } = req.body;
@@ -17,11 +19,29 @@ exports.likePost = (req, res) => {
 		try {
 			if (err) throw new AppError();
 
-			return res.status(200).json({
-				status: 'success',
-				message: `the Post ${likedPost.post_id} was like by ${likedPost.user_id}`,
-				likedPost,
-			});
+			db.query(
+				'SELECT user_id FROM `posts` WHERE id=?',
+				likedPost.post_id,
+				async (err, data) => {
+					if (err) throw new AppError();
+					const { user_id } = data[0];
+
+					if (likedPost.user_id !== user_id) {
+						addNotification(
+							likedPost.user_id,
+							user_id,
+							'like',
+							getRelease_dt()
+						);
+					}
+
+					return res.status(200).json({
+						status: 'success',
+						message: `the Post ${likedPost.post_id} was like by ${likedPost.user_id}`,
+						likedPost,
+					});
+				}
+			);
 		} catch (error) {
 			return res
 				.status(error.status)

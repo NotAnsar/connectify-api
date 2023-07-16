@@ -83,11 +83,12 @@ exports.updateUser = (req, res) => {
 		try {
 			if (err) throw new AppError();
 
-			const q1 = 'SELECT * FROM user  WHERE id = ?';
+			const q1 = 'SELECT * FROM user WHERE id = ?';
 			db.query(q1, [req.user.id], async (err, data) => {
 				if (err) throw new AppError();
 
 				data[0].password = undefined;
+
 				return res.status(200).json({
 					status: 'success',
 					message: 'User updated successfully',

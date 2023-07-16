@@ -88,16 +88,30 @@ exports.deleteConversation = (req, res) => {
 			.status(401)
 			.json({ status: 'error', message: 'Please provide required inputs' });
 	}
-
+	const q = `SELECT participant1_id ,participant2_id  FROM conversation WHERE id=?;`;
 	const insertQuery = 'DELETE FROM conversation WHERE `conversation`.`id` = ?';
 
-	db.query(insertQuery, id, (err, _) => {
+	db.query(q, id, (err, data) => {
 		try {
 			if (err) throw new AppError();
+			const receiver = Object.values(data[0]).find(
+				(num) => num !== req.user.id
+			);
 
-			res.status(200).json({
-				status: 'success',
-				message: 'conversation deleted succesfully',
+			const recipientSocket = onlineUsers.find(
+				(user) => user.userId == receiver
+			)?.socketId;
+
+			if (recipientSocket)
+				ioInstance.to(recipientSocket).emit('conversation-deleted', id);
+
+			db.query(insertQuery, id, (err, _) => {
+				if (err) throw new AppError();
+
+				res.status(200).json({
+					status: 'success',
+					message: 'conversation deleted succesfully',
+				});
 			});
 		} catch (error) {
 			return res

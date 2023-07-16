@@ -2,6 +2,7 @@ const db = require('../connect');
 
 const AppError = require('../utils/appError');
 const { getRelease_dt } = require('../utils/getRelease_dt');
+const { addNotification } = require('./notification');
 
 exports.getComments = (req, res) => {
 	const { postId } = req.params;
@@ -50,7 +51,23 @@ exports.addComments = (req, res) => {
 
 			newComment.id = data.insertId;
 
-			// ioInstance.emit('commentAdded', post_id);
+			db.query(
+				'SELECT user_id FROM `posts` WHERE id=?',
+				newComment.post_id,
+				async (err, data) => {
+					if (err) throw new AppError();
+					const { user_id } = data[0];
+
+					if (newComment.user_id !== user_id) {
+						addNotification(
+							newComment.user_id,
+							user_id,
+							'comment',
+							getRelease_dt()
+						);
+					}
+				}
+			);
 
 			res.status(200).json({
 				status: 'success',
