@@ -27,6 +27,10 @@ app.use(cors(corsOptions));
 
 app.use(cookieParser());
 
+app.get('/', (req, res) => {
+	res.send('<h1>Hello</h1>');
+});
+
 const server = http.createServer(app);
 const io = socketIO(server, {
 	cors: {
