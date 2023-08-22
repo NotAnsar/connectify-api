@@ -28,7 +28,7 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 
 app.get('/', (req, res) => {
-	res.send('<h1>Hello</h1>');
+	res.json('Welcome To Connectify');
 });
 
 const server = http.createServer(app);
