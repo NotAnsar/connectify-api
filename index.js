@@ -72,37 +72,36 @@ app.use('/api/v1/notifications', notificationsRouter);
 const port = process.env.PORT || 3000;
 
 server.listen(port, () => {
-	// http.listen(port, () => {
 	console.log(`app running on port http://127.0.0.1:${port}...`);
 });
 
-// const onlineUsers = [];
+const onlineUsers = [];
 
 // Socket.IO server setup
-// io.on('connection', (socket) => {
-// 	console.log('new User connected ', onlineUsers);
+io.on('connection', (socket) => {
+	console.log('new User connected ', onlineUsers);
 
-// 	socket.on('new-user-add', (newUserId) => {
-// 		if (!onlineUsers.some((user) => user.userId === newUserId)) {
-// 			// if user is not added before
-// 			onlineUsers.push({ userId: newUserId, socketId: socket.id });
+	socket.on('new-user-add', (newUserId) => {
+		if (!onlineUsers.some((user) => user.userId === newUserId)) {
+			// if user is not added before
+			onlineUsers.push({ userId: newUserId, socketId: socket.id });
 
-// 			console.log('new user is here!', onlineUsers);
-// 		}
-// 		// send all active users to new user
-// 		io.emit('get-users', onlineUsers);
-// 	});
+			console.log('new user is here!', onlineUsers);
+		}
+		// send all active users to new user
+		io.emit('get-users', onlineUsers);
+	});
 
-// 	socket.on('send-message', (message) => {
-// 		io.emit('receive-message', message);
-// 	});
+	socket.on('send-message', (message) => {
+		io.emit('receive-message', message);
+	});
 
-// 	socket.on('disconnect', () => {
-// 		console.log('A user disconnected');
+	socket.on('disconnect', () => {
+		console.log('A user disconnected');
 
-// 		onlineUsers = onlineUsers.filter((user) => user.socketId !== socket.id);
-// 		console.log('user disconnected', onlineUsers);
-// 		// send all online users to all users
-// 		io.emit('get-users', onlineUsers);
-// 	});
-// });
+		onlineUsers = onlineUsers.filter((user) => user.socketId !== socket.id);
+		console.log('user disconnected', onlineUsers);
+		// send all online users to all users
+		io.emit('get-users', onlineUsers);
+	});
+});
