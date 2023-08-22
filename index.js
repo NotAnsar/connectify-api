@@ -29,8 +29,6 @@ const io = socketIO(server, {
 	cors: {
 		origin: process.env.APP_URL,
 		credentials: true,
-		methods: 'GET,PUT,POST,DELETE,PATCH,OPTIONS',
-		allowedHeaders: 'Authorization,Content-Type',
 	},
 });
 
