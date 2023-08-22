@@ -1,41 +1,39 @@
 const express = require('express');
-// const cors = require('cors');
+const cors = require('cors');
 require('dotenv').config();
-// const cookieParser = require('cookie-parser');
+const cookieParser = require('cookie-parser');
 
 const http = require('http');
-// const socketIO = require('socket.io');
+const socketIO = require('socket.io');
 
 const app = express();
-console.log('hi');
 
-// const corsOptions = {
-// 	origin: process.env.CLIENT_APP_URL,
-// 	credentials: true,
-// 	methods: 'GET,PUT,POST,DELETE,PATCH,OPTIONS',
-// 	allowedHeaders: 'Authorization,Content-Type',
-// };
+const corsOptions = {
+	origin: process.env.CLIENT_APP_URL,
+	credentials: true,
+	methods: 'GET,PUT,POST,DELETE,PATCH,OPTIONS',
+	allowedHeaders: 'Authorization,Content-Type',
+};
 
-// app.use(express.json());
-// app.use(cors(corsOptions));
+app.use(express.json());
+app.use(cors(corsOptions));
 
-// app.use(cookieParser());
+app.use(cookieParser());
 
 app.get('/', (req, res) => {
-	console.log('hi');
 	res.json('Welcome To Connectify');
 });
 
 const server = http.createServer(app);
-// const io = socketIO(server, {
-// 	cors: {
-// 		origin: process.env.APP_URL,
-// 		credentials: true,
-// 	},
-// });
+const io = socketIO(server, {
+	cors: {
+		origin: process.env.APP_URL,
+		credentials: true,
+	},
+});
 
-// global.ioInstance = io;
-// global.onlineUsers = [];
+global.ioInstance = io;
+global.onlineUsers = [];
 
 app.use((err, req, res, next) => {
 	if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
@@ -45,29 +43,31 @@ app.use((err, req, res, next) => {
 	next();
 });
 
-// const userRouter = require('./routes/users.js');
-// const commentsRouter = require('./routes/comments.js');
-// const authRouter = require('./routes/auth.js');
-// const likesRouter = require('./routes/likes.js');
-// const savedRouter = require('./routes/postSaved.js');
-// const postsRouter = require('./routes/posts.js');
-// const followRouter = require('./routes/follow.js');
-// const uploadRouter = require('./routes/upload.js');
-// const conversationsRouter = require('./routes/conversations.js');
-// const messagesRouter = require('./routes/messages.js');
-// const notificationsRouter = require('./routes/notification.js');
 // routers
-// app.use('/api/v1/auth', authRouter);
-// app.use('/api/v1/upload', uploadRouter);
-// app.use('/api/v1/users', userRouter);
-// app.use('/api/v1/posts', postsRouter);
-// app.use('/api/v1/comments', commentsRouter);
-// app.use('/api/v1/likes', likesRouter);
-// app.use('/api/v1/saves', savedRouter);
-// app.use('/api/v1/follow', followRouter);
-// app.use('/api/v1/conversations', conversationsRouter);
-// app.use('/api/v1/messages', messagesRouter);
-// app.use('/api/v1/notifications', notificationsRouter);
+
+const userRouter = require('./routes/users.js');
+const commentsRouter = require('./routes/comments.js');
+const authRouter = require('./routes/auth.js');
+const likesRouter = require('./routes/likes.js');
+const savedRouter = require('./routes/postSaved.js');
+const postsRouter = require('./routes/posts.js');
+const followRouter = require('./routes/follow.js');
+const uploadRouter = require('./routes/upload.js');
+const conversationsRouter = require('./routes/conversations.js');
+const messagesRouter = require('./routes/messages.js');
+const notificationsRouter = require('./routes/notification.js');
+
+app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/upload', uploadRouter);
+app.use('/api/v1/users', userRouter);
+app.use('/api/v1/posts', postsRouter);
+app.use('/api/v1/comments', commentsRouter);
+app.use('/api/v1/likes', likesRouter);
+app.use('/api/v1/saves', savedRouter);
+app.use('/api/v1/follow', followRouter);
+app.use('/api/v1/conversations', conversationsRouter);
+app.use('/api/v1/messages', messagesRouter);
+app.use('/api/v1/notifications', notificationsRouter);
 
 const port = process.env.PORT || 3000;
 
