@@ -75,7 +75,7 @@ server.listen(port, () => {
 	console.log(`app running on port http://127.0.0.1:${port}...`);
 });
 
-const onlineUsers = [];
+// const onlineUsers = [];
 
 // Socket.IO server setup
 io.on('connection', (socket) => {
