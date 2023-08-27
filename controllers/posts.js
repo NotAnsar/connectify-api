@@ -99,7 +99,7 @@ exports.getPostsByUser = (req, res) => {
 										GROUP by p.id
 										ORDER BY p.release_dt DESC`;
 
-			db.query(q, [req.user.id, user_id, user_id], async (err, data) => {
+			db.query(q, [req.user.id, req.user.id, user_id], async (err, data) => {
 				if (err) throw new AppError();
 
 				return res
@@ -135,6 +135,7 @@ exports.getAllPosts = (req, res) => {
 		try {
 			if (err) throw new AppError();
 
+			console.log(data);
 			return res
 				.status(200)
 				.json({ status: 'success', message: '', posts: data });

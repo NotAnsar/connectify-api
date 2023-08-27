@@ -165,7 +165,7 @@ exports.getSuggestedUsers = (req, res) => {
 };
 
 exports.getFriends = (req, res) => {
-	const q1 = `SELECT u.id ,u.prenom,u.nom ,u.username ,u.photo ,
+	const q1 = `SELECT DISTINCT u.id ,u.prenom,u.nom ,u.username ,u.photo ,
 							IF(ff.follower_id IS NOT NULL, 1, 0) AS is_followed 
 							FROM user u
 							LEFT JOIN follow ff ON ff.followed_id = u.id AND ff.follower_id = ?
