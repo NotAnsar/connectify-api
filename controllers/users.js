@@ -1,6 +1,9 @@
 const db = require('../connect');
 const bcrypt = require('bcryptjs');
+
 const AppError = require('../utils/appError');
+
+const { deletePicture } = require('../utils/deletePicture');
 
 exports.getMe = (req, res) => {
 	const q1 = `select * from user where id=?`;
@@ -64,8 +67,9 @@ exports.getProfile = (req, res) => {
 	});
 };
 
-exports.updateUser = (req, res) => {
+exports.updateUser = async (req, res) => {
 	const updates = req.body;
+	console.log(updates.coverPhoto);
 
 	if (
 		Object.keys(updates).length === 0 ||
@@ -77,6 +81,35 @@ exports.updateUser = (req, res) => {
 			.json({ status: 'error', message: 'No updates provided' });
 	}
 
+	// if (updates.photo === null || updates.coverPhoto === null) {
+	// 	const isCoverPhoto = updates.coverPhoto === null;
+
+	// 	const query = `SELECT ${
+	// 		isCoverPhoto ? 'coverPhoto' : 'photo'
+	// 	}  From user where id = ?`;
+	// 	db.query(query, req.user.id, async (err, data) => {
+	// 		try {
+	// 			if (err) throw new AppError();
+	// 			const imageName = isCoverPhoto ? data[0].coverPhoto : data[0].photo;
+	// 			const imageFile = path.join(process.cwd(), 'images', imageName);
+	// 			console.log('deleting', imageFile);
+	// 			const result = await fs.unlink(imageFile);
+	// 			console.log(result);
+	// 		} catch (error) {
+	// 			console.log(error);
+	// 			return res.status(error.status).json({
+	// 				status: 'error',
+	// 				message: 'Somethig went wrong while deleting photo or coverphoto',
+	// 			});
+	// 		}
+	// 	});
+	// }
+	if (updates.photo === null || updates.coverPhoto === null) {
+		const isCoverPhoto = updates.coverPhoto === null ? 'coverPhoto' : 'photo';
+		const query = `SELECT ${isCoverPhoto}  From user where id = ?`;
+
+		deletePicture(query, isCoverPhoto, req.user.id, res);
+	}
 	const q = 'UPDATE user SET ? WHERE id = ?';
 
 	db.query(q, [updates, req.user.id], async (err, data) => {

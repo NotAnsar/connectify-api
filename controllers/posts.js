@@ -1,5 +1,6 @@
 const db = require('../connect');
 const AppError = require('../utils/appError');
+const { deletePicture } = require('../utils/deletePicture');
 const { getRelease_dt } = require('../utils/getRelease_dt');
 
 exports.getFeedPost = (req, res) => {
@@ -187,6 +188,16 @@ exports.deletePost = (req, res) => {
 	const { id } = req.params;
 
 	const q = 'DELETE FROM `posts` WHERE id=?';
+
+	try {
+		deletePicture('SELECT img FROM posts WHERE id = ? ', 'img', id, res);
+	} catch (error) {
+		console.log(error);
+		return res.status(error.status).json({
+			status: 'error',
+			message: 'Somethig went wrong while deleting photo or coverphoto',
+		});
+	}
 
 	db.query(q, [id], async (err, data) => {
 		try {

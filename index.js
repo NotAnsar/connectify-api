@@ -5,8 +5,11 @@ const cookieParser = require('cookie-parser');
 
 const http = require('http');
 const socketIO = require('socket.io');
+const path = require('path');
 
 const app = express();
+
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 const corsOptions = {
 	origin: process.env.CLIENT_APP_URL,
@@ -45,29 +48,17 @@ app.use((err, req, res, next) => {
 
 // routers
 
-const userRouter = require('./routes/users.js');
-const commentsRouter = require('./routes/comments.js');
-const authRouter = require('./routes/auth.js');
-const likesRouter = require('./routes/likes.js');
-const savedRouter = require('./routes/postSaved.js');
-const postsRouter = require('./routes/posts.js');
-const followRouter = require('./routes/follow.js');
-const uploadRouter = require('./routes/upload.js');
-const conversationsRouter = require('./routes/conversations.js');
-const messagesRouter = require('./routes/messages.js');
-const notificationsRouter = require('./routes/notification.js');
-
-app.use('/api/v1/auth', authRouter);
-app.use('/api/v1/upload', uploadRouter);
-app.use('/api/v1/users', userRouter);
-app.use('/api/v1/posts', postsRouter);
-app.use('/api/v1/comments', commentsRouter);
-app.use('/api/v1/likes', likesRouter);
-app.use('/api/v1/saves', savedRouter);
-app.use('/api/v1/follow', followRouter);
-app.use('/api/v1/conversations', conversationsRouter);
-app.use('/api/v1/messages', messagesRouter);
-app.use('/api/v1/notifications', notificationsRouter);
+app.use('/api/v1/auth', require('./routes/auth.js'));
+app.use('/api/v1/upload', require('./routes/upload.js'));
+app.use('/api/v1/users', require('./routes/users.js'));
+app.use('/api/v1/posts', require('./routes/posts.js'));
+app.use('/api/v1/comments', require('./routes/comments.js'));
+app.use('/api/v1/likes', require('./routes/likes.js'));
+app.use('/api/v1/saves', require('./routes/postSaved.js'));
+app.use('/api/v1/follow', require('./routes/follow.js'));
+app.use('/api/v1/conversations', require('./routes/conversations.js'));
+app.use('/api/v1/messages', require('./routes/messages.js'));
+app.use('/api/v1/notifications', require('./routes/notification.js'));
 
 const port = process.env.PORT || 3000;
 

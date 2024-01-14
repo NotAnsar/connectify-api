@@ -7,6 +7,7 @@ const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
 	service: 'gmail',
+
 	auth: {
 		user: process.env.EMAIL,
 		pass: process.env.EMAIL_PASS,
@@ -14,7 +15,6 @@ const transporter = nodemailer.createTransport({
 });
 
 exports.register = (req, res) => {
-	//check required input exist
 	const {
 		email,
 		password,
@@ -224,12 +224,10 @@ exports.sendOTP = (req, res) => {
 				if (data.length === 1)
 					throw new AppError('User Already Exist. Please Login', 409);
 			} else {
-				console.log(data);
 				if (data.length === 0)
 					throw new AppError('There is no user with this email address.', 404);
 			}
 
-			// try {
 			const OTPCode = generateOTP();
 			const mailOptions = {
 				from: 'karrouach.ansar@gmail.com',
@@ -240,6 +238,7 @@ exports.sendOTP = (req, res) => {
 
 			transporter.sendMail(mailOptions, function (error, info) {
 				if (error) {
+					console.log(error);
 					throw new AppError('Error occurred while sending email', 400);
 				} else {
 					return res.status(200).json({
