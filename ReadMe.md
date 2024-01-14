@@ -27,7 +27,3 @@ Connectify is a social media platform designed to connect people, share experien
 - **Deployment:**
   - Frontend: Vercel
   - Backend: Railway.app
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
